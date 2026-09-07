@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CEIA La Pintana - Iniciar sesión</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f7fb; margin: 0; display: grid; place-items: center; min-height: 100vh; }
+    .card { background: white; padding: 28px; border-radius: 12px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); }
+    h1 { font-size: 1.3rem; margin-top: 0; color: #17324d; }
+    p { color: #4b5d73; font-size: 0.95rem; }
+    label { display: block; margin-bottom: 6px; font-weight: 600; color: #23374d; }
+    input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; }
+    button { width: 100%; background: #1d4ed8; color: white; border: none; padding: 11px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+    .hint { margin-top: 10px; font-size: 0.9rem; color: #475569; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>CEIA La Pintana</h1>
+    <p>Ingrese con su usuario y contraseña para continuar.</p>
+    <form method="post">
+      {% csrf_token %}
+      {% if next %}
+        <input type="hidden" name="next" value="{{ next }}" />
+      {% endif %}
+      {{ form.as_p }}
+      <button type="submit">Ingresar</button>
+    </form>
+    <p class="hint">Usuario predeterminado: <strong>admin</strong> · Contraseña: <strong>admin</strong></p>
+  </main>
+</body>
+</html>

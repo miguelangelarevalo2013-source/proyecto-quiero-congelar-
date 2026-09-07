@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: linear-gradient(135deg,#eff6ff,#f8fafc); color: #0f172a; }
+    .shell { max-width: 1000px; margin: 0 auto; padding: 32px 18px 48px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:24px; }
+    .card { background:#fff; border-radius:12px; padding:18px; box-shadow: 0 8px 20px rgba(15,23,42,.06); }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { padding:10px 8px; border-bottom:1px solid #e6eef6; text-align:left; }
+    th { background:#f8fafc; color:#0f172a; }
+    .btn { display:inline-block; margin-top:8px; text-decoration:none; background:#2563eb; color:#fff; padding:8px 10px; border-radius:8px; font-weight:700; }
+    .danger { background:#dc2626; }
+    .form-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .form-row input { padding:8px; border-radius:6px; border:1px solid #cbd5e1; }
+    .form-row select { padding:8px; border-radius:6px; border:1px solid #cbd5e1; }
+    .muted { color:#64748b; font-size:.92rem; }
+    .messages { margin:12px 0; }
+    .msg { padding:10px; border-radius:8px; margin-bottom:8px; }
+    .msg.success { background:#ecfdf5; color:#065f46; }
+    .msg.error { background:#fff1f2; color:#991b1b; }
+    .msg.warning { background:#fffbeb; color:#92400e; }
+  </style>
+  <script>
+    (function () {
+      const STORAGE_KEY = 'inventario_scroll_y';
+
+      function saveScrollPosition() {
+        sessionStorage.setItem(STORAGE_KEY, String(window.scrollY || 0));
+      }
+
+      function restoreScrollPosition() {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved === null) return;
+
+        const y = Number(saved);
+        if (!Number.isNaN(y)) {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: y, behavior: 'auto' });
+          });
+        }
+      }
+
+      history.scrollRestoration = 'manual';
+
+      document.addEventListener('DOMContentLoaded', function () {
+        restoreScrollPosition();
+
+        document.addEventListener('scroll', saveScrollPosition, { passive: true });
+
+        document.querySelectorAll('form, a').forEach(function (element) {
+          element.addEventListener('submit', saveScrollPosition);
+          element.addEventListener('click', saveScrollPosition);
+        });
+
+        window.addEventListener('beforeunload', saveScrollPosition);
+      });
+    })();
+  </script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1 style="margin:0 0 6px; font-size:1.6rem;">Inventario</h1>
+        <p class="muted">Gestione los recursos del colegio: agregue o elimine artículos.</p>
+      </div>
+      <a class="btn" href="/dashboard/">← Volver al panel</a>
+    </header>
+
+    <section class="card">
+      <div class="messages">
+        {% for message in messages %}
+          <div class="msg {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+
+      <h2>Agregar recurso</h2>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_item" />
+        <div class="form-row">
+          <input name="codigo_activo" placeholder="Código activo (único)" />
+          <input name="nombre_articulo" placeholder="Nombre del artículo" style="flex:1" />
+          <select name="categoria" required>
+            <option value="">Seleccionar categoría...</option>
+            <option value="aseo">Materiales de aseo</option>
+            <option value="oficina_pedagogicos">Materiales de oficina y pedagógicos</option>
+          </select>
+          <input name="stock_actual" placeholder="Stock inicial" style="width:120px" />
+        </div>
+        <button class="btn" type="submit">Agregar recurso</button>
+      </form>
+
+      <hr style="margin:18px 0; border:none; border-top:1px solid #eef2ff;" />
+
+      <form method="get" action="/inventario/" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:18px;">
+        <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Buscar por nombre o código" style="flex:1; min-width:220px; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1;" />
+        <button class="btn" type="submit">Buscar</button>
+        {% if query %}
+          <a class="btn" href="/inventario/" style="background:#64748b;">Limpiar</a>
+        {% endif %}
+      </form>
+
+      <h2>Lista de recursos</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Stock</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recursos %}
+            {% for r in recursos %}
+              <tr>
+                <td>{{ r.codigo_activo }}</td>
+                <td>{{ r.nombre_articulo }}</td>
+                <td>
+                  {% if r.categoria == 'aseo' %}
+                    Materiales de aseo
+                  {% elif r.categoria == 'oficina_pedagogicos' %}
+                    Materiales de oficina y pedagógicos
+                  {% else %}
+                    {{ r.categoria }}
+                  {% endif %}
+                </td>
+                <td>{{ r.stock_actual }}</td>
+                <td>
+                  <form method="post" style="display:inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_item" />
+                    <input type="hidden" name="recurso_id" value="{{ r.id }}" />
+                    <button class="btn danger" type="submit">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="5">No hay recursos en el inventario.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap;">
+          {% if page_obj.has_previous %}
+            <a class="btn" href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+          {% else %}
+            <span class="btn" style="opacity:0.5; pointer-events:none; background:#cbd5e1; color:#475569;">Anterior</span>
+          {% endif %}
+
+          <span class="muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+
+          {% if page_obj.has_next %}
+            <a class="btn" href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+          {% else %}
+            <span class="btn" style="opacity:0.5; pointer-events:none; background:#cbd5e1; color:#475569;">Siguiente</span>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+
+  </main>
+</body>
+</html>

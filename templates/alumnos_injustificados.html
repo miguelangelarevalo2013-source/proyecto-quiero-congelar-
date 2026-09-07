@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alumnos Atrasados - CEIA La Pintana</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #eff6ff, #f8fafc); color: #0f172a; }
+    .shell { max-width: 1200px; margin: 0 auto; padding: 32px 18px; }
+    .header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:24px; }
+    .header h1 { font-size:1.8rem; color:#1e293b; }
+    .btn-back { background:#e2e8f0; color:#334155; padding:10px 14px; border-radius:10px; text-decoration:none; font-weight:600; border:none; cursor:pointer; }
+    .btn-back:hover { background:#cbd5e1; }
+    .page-grid { display:grid; grid-template-columns: minmax(0, 1.8fr) minmax(260px, 0.9fr); gap:18px; }
+    .panel { background:white; padding:18px; border-radius:16px; box-shadow:0 10px 24px rgba(15,23,42,.08); }
+    .page-grid > aside { display:flex; flex-direction:column; gap:18px; }
+    .course-panel { grid-column: 1 / -1; padding:14px 18px; }
+    .course-row { display:grid; grid-template-columns: 1.4fr 0.8fr auto; gap:12px; align-items:end; }
+    .course-row .form-group { margin-bottom:0; }
+    .panel h2 { margin-bottom:12px; font-size:1.15rem; color:#1e293b; }
+    .message { padding:14px 16px; border-radius:12px; margin-bottom:16px; }
+    .message.success { background:#dcfce7; color:#166534; }
+    .message.error { background:#fee2e2; color:#991b1b; }
+    .message.warning { background:#fef9c3; color:#78350f; }
+    .alumnos-table { width:100%; border-collapse:collapse; }
+    .alumnos-table th, .alumnos-table td { padding:12px 10px; border-bottom:1px solid #e2e8f0; text-align:left; }
+    .alumnos-table th { background:#e0f2fe; color:#0f172a; font-weight:700; }
+    .alumnos-table tbody tr:hover { background:#f8fafc; }
+    .badge { display:inline-block; padding:5px 10px; border-radius:999px; font-size:0.77rem; font-weight:700; }
+    .badge-low { background:#fef3c7; color:#92400e; }
+    .badge-high { background:#fee2e2; color:#b91c1c; }
+    .action-btn { background:#2563eb; color:white; border:none; border-radius:10px; padding:7px 11px; cursor:pointer; font-size:0.85rem; }
+    .action-btn:hover { background:#1d4ed8; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; margin-bottom:6px; font-weight:600; color:#334155; }
+    .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:10px; font-size:0.95rem; }
+    .form-group textarea { resize:vertical; min-height:90px; }
+    .btn-submit { background:#2563eb; color:white; padding:10px 14px; border:none; border-radius:10px; cursor:pointer; font-weight:700; width:100%; }
+    .btn-submit:hover { background:#1d4ed8; }
+    .info-note { margin-top:12px; color:#475569; font-size:0.92rem; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="header">
+      <div>
+        <h1>Alumnos Atrasados</h1>
+        <p class="info-note">Registre atrasos y añade nuevos estudiantes desde esta página.</p>
+      </div>
+      <a class="btn-back" href="/dashboard/">← Volver al panel</a>
+    </header>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="page-grid">
+      <div class="panel course-panel">
+        <h2>Agregar nuevo curso</h2>
+        <form method="post" class="course-row">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_course" />
+          <div class="form-group">
+            <label>Nombre del curso</label>
+            <input name="nombre_curso" placeholder="Ej: 5°A" required />
+          </div>
+          <div class="form-group">
+            <label>Jornada</label>
+            <select name="jornada" required>
+              <option value="">Seleccione jornada...</option>
+              {% for value, label in curso_jornadas %}
+                <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn-submit" style="width:auto; min-width:150px;">Agregar curso</button>
+        </form>
+      </div>
+
+      <section class="panel">
+        <h2>Lista de alumnos</h2>
+        <table class="alumnos-table">
+          <thead>
+            <tr>
+              <th>RUT</th>
+              <th>Nombre</th>
+              <th>Curso</th>
+              <th>Atrasos</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for estudiante in estudiantes %}
+              <tr>
+                <td>{{ estudiante.rut }}</td>
+                <td>{{ estudiante.nombre }}</td>
+                <td>{{ estudiante.curso.nombre }}</td>
+                <td>
+                  {% if estudiante.atrasos_count > 4 %}
+                    <span class="badge badge-high">{{ estudiante.atrasos_count }}+</span>
+                  {% else %}
+                    <span class="badge badge-low">{{ estudiante.atrasos_count }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="mark_late" />
+                    <input type="hidden" name="student_id" value="{{ estudiante.id }}" />
+                    <input type="hidden" name="observaciones" value="" />
+                    <button type="submit" class="action-btn">Marcar atraso</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" style="text-align:center; color:#64748b;">No hay alumnos registrados.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <aside>
+        <div class="panel">
+          <h2>Agregar nuevo alumno</h2>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_student" />
+            <div class="form-group">
+              <label>RUT</label>
+              <input name="rut" placeholder="Ej: 12345678-9" required />
+            </div>
+            <div class="form-group">
+              <label>Nombre completo</label>
+              <input name="nombre" placeholder="Ej: Juan Pérez" required />
+            </div>
+            <div class="form-group">
+              <label>Sexo</label>
+              <select name="sexo" required>
+                <option value="">Seleccione...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Email del apoderado</label>
+              <input type="email" name="email_apoderado" placeholder="apoderado@dominio.cl" required />
+            </div>
+            <div class="form-group">
+              <label>Motivo del atraso</label>
+              <textarea name="motivo_atraso" placeholder="Ej: Llegó tarde por tráfico, problema familiar, etc." rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Curso</label>
+              <select name="curso" required>
+                <option value="">Seleccione curso...</option>
+                {% for curso in cursos %}
+                  <option value="{{ curso.id }}">{{ curso.nombre }} - {{ curso.jornada }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="btn-submit">Agregar alumno</button>
+          </form>
+
+          <div class="info-note">
+            A partir del quinto atraso el sistema enviará una notificación al apoderado.
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

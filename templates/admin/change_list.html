@@ -1,0 +1,16 @@
+{% extends "admin/change_list.html" %}
+
+{% block result_list %}
+  {{ block.super }}
+  <script>
+    // Cambiar "Run" por "Aceptar" en el botón de acciones
+    document.addEventListener('DOMContentLoaded', function() {
+      const buttons = document.querySelectorAll('button[type="submit"]');
+      buttons.forEach(button => {
+        if (button.textContent.trim() === 'Run') {
+          button.textContent = 'Aceptar';
+        }
+      });
+    });
+  </script>
+{% endblock %}

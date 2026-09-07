@@ -1,0 +1,23 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django local files
+db.sqlite3
+*.log
+.env
+.env.*
+!.env.example
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Editor and OS files
+.vscode/*
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db

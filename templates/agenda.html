@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda del Director - CEIA La Pintana</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #eff6ff, #f8fafc); color: #0f172a; }
+    .shell { max-width: 1200px; margin: 0 auto; padding: 32px 18px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 12px; }
+    .header h1 { font-size: 1.8rem; color: #1e293b; }
+    .btn-back { background: #e2e8f0; color: #334155; padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 600; border: none; cursor: pointer; }
+    .btn-back:hover { background: #cbd5e1; }
+    .btn-nav { background: #e2e8f0; color: #334155; padding: 6px 10px; border-radius: 8px; text-decoration: none; font-weight: 600; border: none; cursor: pointer; font-size: 0.85rem; margin-right: 8px; }
+    .btn-nav:hover { background: #cbd5e1; }
+    .btn-small { padding: 8px 10px; font-size: 0.85rem; border-radius: 8px; }
+    .month-controls { display: flex; align-items: center; gap: 10px; }
+    .month-controls label { display: flex; align-items: center; gap: 6px; font-size: 0.95rem; color: #334155; }
+    .month-controls select { min-width: 110px; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #0f172a; }
+    .calendar-wrapper { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1); }
+    .month-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 14px; }
+    .month-title { font-size: 1.4rem; font-weight: 700; color: #1e293b; }
+    .calendar { width: 100%; border-collapse: collapse; }
+    .calendar th { background: #1d4ed8; color: white; padding: 12px; text-align: center; font-weight: 600; }
+    .calendar td { border: 1px solid #e2e8f0; padding: 8px; vertical-align: top; height: 120px; }
+    .calendar td.empty { background: #f8fafc; }
+    .calendar td.today { background: #dbeafe; }
+    .day-number { font-weight: 700; color: #334155; margin-bottom: 6px; font-size: 0.95rem; }
+    .events-list { font-size: 0.8rem; max-height: 90px; overflow-y: auto; }
+    .event-item { background: #fef3c7; border-left: 3px solid #fbbf24; padding: 4px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; }
+    .event-item:hover { background: #fcd34d; }
+    .event-time { font-weight: 600; color: #1f2937; }
+    .event-title { color: #374151; font-size: 0.75rem; }
+    .add-event-btn { background: #2563eb; color: white; padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.8rem; margin-top: 4px; }
+    .add-event-btn:hover { background: #1d4ed8; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; place-items: center; }
+    .modal.open { display: grid; }
+    .modal-content { background: white; padding: 32px; border-radius: 16px; max-width: 500px; width: 90%; }
+    .modal-content h2 { margin-bottom: 18px; color: #1e293b; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #334155; }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .form-group textarea { resize: vertical; }
+    .form-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-save { background: #2563eb; color: white; padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn-save:hover { background: #1d4ed8; }
+    .btn-cancel { background: #e2e8f0; color: #334155; padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn-cancel:hover { background: #cbd5e1; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="header">
+      <h1>📅 Agenda del Director</h1>
+      <a href="/dashboard/" class="btn-back">← Volver al panel</a>
+    </header>
+
+    <div class="calendar-wrapper">
+      <div class="month-nav">
+        <div class="month-controls">
+          <a class="btn-nav" href="?month={{ prev_month }}&year={{ prev_year }}">←</a>
+          <span class="month-title">{{ month_name }}</span>
+          <a class="btn-nav" href="?month={{ next_month }}&year={{ next_year }}">→</a>
+        </div>
+        <form method="get" class="month-controls">
+          <label>
+            Mes
+            <select name="month">
+              {% for value, label in month_options %}
+                <option value="{{ value }}" {% if value == current_month.month %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Año
+            <select name="year">
+              {% for year in year_options %}
+                <option value="{{ year }}" {% if year == current_month.year %}selected{% endif %}>{{ year }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button type="submit" class="add-event-btn btn-small">Ver</button>
+          <button type="button" class="add-event-btn btn-small" onclick="openAddEventModal()">+ Agregar</button>
+        </form>
+      </div>
+
+      <table class="calendar">
+        <thead>
+          <tr>
+            <th>Lunes</th>
+            <th>Martes</th>
+            <th>Miércoles</th>
+            <th>Jueves</th>
+            <th>Viernes</th>
+            <th>Sábado</th>
+            <th>Domingo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for week in weeks %}
+            <tr>
+              {% for day in week %}
+                {% if day %}
+                  <td class="{% if day.date == today %}today{% endif %}">
+                    <div class="day-number">{{ day.day }}</div>
+                    <div class="events-list">
+                      {% for evento in day.eventos %}
+                        <div class="event-item" onclick="editEvent({{ evento.id }})">
+                          <div class="event-time">{{ evento.hora_inicio|time:"H:i" }}</div>
+                          <div class="event-title">{{ evento.titulo }}</div>
+                        </div>
+                      {% empty %}
+                        <small style="color: #94a3b8;">Sin eventos</small>
+                      {% endfor %}
+                    </div>
+                    <button class="add-event-btn" onclick="openAddEventModal('{{ day.date|date:'Y-m-d' }}')">+</button>
+                  </td>
+                {% else %}
+                  <td class="empty"></td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal para agregar evento -->
+  <div class="modal" id="eventModal">
+    <div class="modal-content">
+      <h2>Nuevo evento</h2>
+      <form>
+        <div class="form-group">
+          <label>Título del evento</label>
+          <input type="text" id="eventTitle" placeholder="Ej: Reunión directiva" required>
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="eventDate" required>
+        </div>
+        <div class="form-group">
+          <label>Hora de inicio</label>
+          <input type="time" id="eventStartTime" required>
+        </div>
+        <div class="form-group">
+          <label>Hora de término</label>
+          <input type="time" id="eventEndTime" required>
+        </div>
+        <div class="form-group">
+          <label>Descripción (opcional)</label>
+          <textarea id="eventDescription" placeholder="Detalles del evento..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-save" onclick="saveEvent()">Guardar evento</button>
+          <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openAddEventModal(date = null) {
+      const modal = document.getElementById('eventModal');
+      document.getElementById('eventTitle').value = '';
+      document.getElementById('eventDescription').value = '';
+      if (date) {
+        document.getElementById('eventDate').value = date;
+      } else {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('eventDate').value = today;
+      }
+      document.getElementById('eventStartTime').value = '09:00';
+      document.getElementById('eventEndTime').value = '10:00';
+      modal.classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('eventModal').classList.remove('open');
+    }
+
+    function saveEvent() {
+      const title = document.getElementById('eventTitle').value;
+      const date = document.getElementById('eventDate').value;
+      const start_time = document.getElementById('eventStartTime').value;
+      const end_time = document.getElementById('eventEndTime').value;
+      const description = document.getElementById('eventDescription').value;
+
+      if (!title || !date || !start_time || !end_time) {
+        alert('Por favor complete los campos requeridos');
+        return;
+      }
+
+      // Redirigir al admin para agregar el evento
+      window.location.href = `/admin/escuela_app/eventoagenda/add/?titulo=${encodeURIComponent(title)}&fecha=${date}&hora_inicio=${start_time}&hora_fin=${end_time}&descripcion=${encodeURIComponent(description)}`;
+    }
+
+    function editEvent(id) {
+      window.location.href = `/admin/escuela_app/eventoagenda/${id}/change/`;
+    }
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('eventModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+  </script>
+</body>
+</html>

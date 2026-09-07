@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: linear-gradient(135deg,#eff6ff,#f8fafc); color: #0f172a; }
+    .shell { max-width: 1200px; margin: 0 auto; padding: 32px 18px 48px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:24px; }
+    .badge { background:#1d4ed8; color:#fff; padding:8px 12px; border-radius:999px; font-size:.95rem; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:18px; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow: 0 10px 25px rgba(15,23,42,.10); }
+    .card h2 { margin-top:0; font-size:1.15rem; color:#1e293b; }
+    .card p { color:#475569; line-height:1.45; }
+    .btn { display:inline-block; margin-top:8px; text-decoration:none; background:#2563eb; color:#fff; padding:10px 12px; border-radius:10px; font-weight:700; }
+    .muted { color:#64748b; font-size:.92rem; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1 style="margin:0 0 6px; font-size:1.8rem;">CEIA La Pintana</h1>
+        <p class="muted">Centro de navegación del sistema escolar.</p>
+      </div>
+      <a class="badge" href="/admin/">Administración de usuarios</a>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Inventario</h2>
+        <p>Gestione recursos, materiales, activos y stock del colegio.</p>
+        <a class="btn" href="/inventario/">Ir al inventario</a>
+      </article>
+
+      <article class="card">
+        <h2>Alumnos atrasados</h2>
+        <p>Agregue alumnos y registre atrasos para que el sistema notifique a partir del quinto atraso.</p>
+        <a class="btn" href="/injustificados/">Ver alumnos</a>
+      </article>
+
+      <article class="card">
+        <h2>Agenda del director</h2>
+        <p>Administre eventos, reuniones y tareas del equipo directivo.</p>
+        <a class="btn" href="/agenda/">Abrir agenda</a>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
