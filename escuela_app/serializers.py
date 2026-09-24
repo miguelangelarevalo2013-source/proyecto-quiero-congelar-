@@ -50,6 +50,19 @@ class RegistroAsistenciaSerializer(serializers.ModelSerializer):
             "observaciones",
         ]
 
+    def validate(self, attrs):
+        estudiante = attrs.get("estudiante", getattr(self.instance, "estudiante", None))
+        fecha = attrs.get("fecha", getattr(self.instance, "fecha", None))
+        existing = RegistroAsistencia.objects.filter(estudiante=estudiante, fecha=fecha)
+        if self.instance:
+            existing = existing.exclude(pk=self.instance.pk)
+        if existing.exists():
+            raise serializers.ValidationError(
+                "Ya existe un registro de asistencia para este estudiante en la fecha seleccionada. "
+                "Puedes editar el registro existente si necesitas modificar su estado."
+            )
+        return attrs
+
 
 class RecursoInventarioSerializer(serializers.ModelSerializer):
     class Meta:

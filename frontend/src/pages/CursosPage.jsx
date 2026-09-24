@@ -32,15 +32,7 @@ const courseColumns = [
         <button className="action-edit" onClick={() => row.onEdit(row)} title="Editar">✏️ Editar</button>
         <button
           className="action-delete"
-          onClick={async () => {
-            if (!confirm('¿Eliminar curso? Esta acción no se puede deshacer.')) return
-            try {
-              await api.deleteCurso(row.id)
-              await loadCourses()
-            } catch (e) {
-              alert(e.message || 'Error al eliminar curso')
-            }
-          }}
+          onClick={() => row.onDeleteRequest(row)}
           title="Eliminar"
         >
           🗑️ Eliminar
@@ -57,6 +49,8 @@ export function CursosPage() {
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [courseToDelete, setCourseToDelete] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -68,6 +62,7 @@ export function CursosPage() {
         data.map((course) => ({
           ...course,
           onEdit: () => handleEdit(course),
+          onDeleteRequest: () => setCourseToDelete(course),
         })),
       )
     } catch (loadError) {
@@ -91,6 +86,27 @@ export function CursosPage() {
   const handleChange = (event) => {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleDelete = async () => {
+    if (!courseToDelete) return
+
+    const deletedCourseName = courseToDelete.nombre
+    setDeletingId(courseToDelete.id)
+    setCourseToDelete(null)
+    setError('')
+    setSuccess('')
+
+    try {
+      await api.deleteCurso(courseToDelete.id)
+      setSuccess(`Curso "${deletedCourseName}" eliminado correctamente.`)
+      showToast(`Curso "${deletedCourseName}" eliminado correctamente.`, 'success')
+      await loadCourses()
+    } catch (deleteError) {
+      setError(deleteError.message || 'No se pudo eliminar el curso.')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const validateForm = () => {
@@ -178,6 +194,31 @@ export function CursosPage() {
         <ErrorMessage message={error} />
         {success ? <div className="success-banner">{success}</div> : null}
       </section>
+
+      {courseToDelete ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setCourseToDelete(null)}>
+          <section
+            className="confirmation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-course-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-course-title">¿Confirmar eliminación?</h2>
+            <p>
+              ¿Estás seguro de que quieres eliminar el curso <strong>{courseToDelete.nombre}</strong>?
+            </p>
+            <div className="btn-row">
+              <Button type="button" variant="secondary" onClick={() => setCourseToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="danger" disabled={deletingId === courseToDelete.id} onClick={handleDelete}>
+                {deletingId === courseToDelete.id ? 'Eliminando...' : 'Sí, eliminar curso'}
+              </Button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <section className="panel">
         <div className="panel-header">

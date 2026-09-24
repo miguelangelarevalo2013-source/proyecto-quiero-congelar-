@@ -11,24 +11,35 @@ async function request(endpoint, options = {}) {
   })
 
   if (!response.ok) {
-    let message = 'Error al consultar la API'
+    const responseText = await response.text()
+    let message = ''
 
-    try {
-      const data = await response.json()
-      if (data && typeof data === 'object') {
-        const details = Object.values(data).flat().filter(Boolean)
-        if (details.length > 0) {
-          message = Array.isArray(details[0]) ? details[0].join(' ') : String(details[0])
+    if (responseText) {
+      const isHtmlResponse = /<\/?(?:html|!doctype|body|head)\b/i.test(responseText)
+
+      if (isHtmlResponse) {
+        message = ''
+      } else {
+        try {
+          const data = JSON.parse(responseText)
+          if (data && typeof data === 'object') {
+            const details = Object.values(data).flat(Infinity).filter(Boolean)
+            if (details.length > 0) {
+              message = details.join(' ')
+            }
+          } else if (typeof data === 'string') {
+            message = data
+          }
+        } catch {
+          message = responseText.trim()
         }
-      }
-    } catch {
-      const fallback = await response.text()
-      if (fallback) {
-        message = fallback
       }
     }
 
-    throw new Error(message)
+    const statusMessage = response.status >= 500
+      ? 'El servidor encontró un error al procesar la solicitud.'
+      : `La solicitud no pudo completarse (HTTP ${response.status}).`
+    throw new Error(message || statusMessage)
   }
 
   if (response.status === 204) {
@@ -39,9 +50,12 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
+  checkHealth: () => request('/health/', { signal: AbortSignal.timeout(5000) }),
+
   getCursos: () => request('/cursos/'),
   createCurso: (payload) => request('/cursos/', { method: 'POST', body: JSON.stringify(payload) }),
   updateCurso: (id, payload) => request(`/cursos/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteCurso: (id) => request(`/cursos/${id}/`, { method: 'DELETE' }),
 
   getEstudiantes: () => request('/estudiantes/'),
   createEstudiante: (payload) => request('/estudiantes/', { method: 'POST', body: JSON.stringify(payload) }),
@@ -50,6 +64,7 @@ export const api = {
   getAsistencias: () => request('/asistencias/'),
   createAsistencia: (payload) => request('/asistencias/', { method: 'POST', body: JSON.stringify(payload) }),
   updateAsistencia: (id, payload) => request(`/asistencias/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteAsistencia: (id) => request(`/asistencias/${id}/`, { method: 'DELETE' }),
 
   getInventario: () => request('/inventario/'),
   createInventario: (payload) => request('/inventario/', { method: 'POST', body: JSON.stringify(payload) }),
@@ -60,6 +75,7 @@ export const api = {
   getEventos: () => request('/eventos/'),
   createEvento: (payload) => request('/eventos/', { method: 'POST', body: JSON.stringify(payload) }),
   updateEvento: (id, payload) => request(`/eventos/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteEvento: (id) => request(`/eventos/${id}/`, { method: 'DELETE' }),
 }
 
 export default api

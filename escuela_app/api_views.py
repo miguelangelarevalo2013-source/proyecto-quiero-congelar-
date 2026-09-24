@@ -1,4 +1,5 @@
-from rest_framework import status, viewsets
+from django.http import JsonResponse
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -10,6 +11,10 @@ from .serializers import (
     RecursoInventarioSerializer,
     RegistroAsistenciaSerializer,
 )
+
+
+def api_health(request):
+    return JsonResponse({"status": "ok"})
 
 
 class CursoViewSet(viewsets.ModelViewSet):

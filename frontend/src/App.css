@@ -137,6 +137,24 @@
   font-size: 0.82rem;
 }
 
+.status-pill--checking {
+  color: #8a6414;
+  background: #fff4d6;
+}
+
+.status-pill--unavailable {
+  color: #a83232;
+  background: #ffe8e8;
+}
+
+.footer-status--checking {
+  color: #8a6414;
+}
+
+.footer-status--unavailable {
+  color: #a83232;
+}
+
 /* Toasts (top-right) */
 .toast-container {
   position: fixed;
@@ -167,6 +185,34 @@
 /* Action buttons */
 .action-edit { background: #ffffff; border: 1px solid #cfe0ff; color: #1f5ed6; padding: 6px 10px; border-radius: 8px; font-weight:700 }
 .action-delete { background: #ffffff; border: 1px solid #ffd6d6; color: #d64545; padding: 6px 10px; border-radius: 8px; font-weight:700 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 35, 55, 0.42);
+}
+
+.confirmation-modal {
+  width: min(100%, 460px);
+  padding: 28px;
+  border: 1px solid #dce5f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 55px rgba(20, 35, 55, 0.24);
+}
+
+.confirmation-modal h2 {
+  margin: 0 0 10px;
+}
+
+.confirmation-modal p {
+  margin: 0;
+  color: #627287;
+}
 
 /* Footer status */
 .app-footer {
@@ -423,6 +469,11 @@
   background: #fff;
   color: #1f5ed6;
   border: 1px solid #e6eefc;
+}
+.btn-danger {
+  background: #c94b4b;
+  color: #ffffff;
+  border-color: #c94b4b;
 }
 
 .btn:disabled {

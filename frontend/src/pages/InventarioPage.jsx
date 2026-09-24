@@ -29,6 +29,9 @@ const inventoryColumns = [
         <Button variant="secondary" onClick={() => row.onEdit(row)}>
           Editar
         </Button>
+        <button className="action-delete" type="button" onClick={() => row.onDeleteRequest(row)}>
+          Eliminar
+        </button>
       </div>
     ),
   },
@@ -44,6 +47,8 @@ export function InventarioPage() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [itemToDelete, setItemToDelete] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -55,7 +60,7 @@ export function InventarioPage() {
         data.map((item) => ({
           ...item,
           onEdit: () => handleEdit(item),
-          onDelete: () => handleDelete(item.id),
+          onDeleteRequest: () => setItemToDelete(item),
         })),
       )
     } catch (loadError) {
@@ -90,15 +95,24 @@ export function InventarioPage() {
     }
   }, [editingId])
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
+    if (!itemToDelete) return
+
+    const deletedItemName = itemToDelete.nombre_articulo
+    const deletedItemId = itemToDelete.id
+    setDeletingId(deletedItemId)
+    setItemToDelete(null)
     try {
       setError('')
       setSuccess('')
-      await api.deleteInventario(id)
-      setSuccess('Recurso eliminado correctamente.')
-      await loadInventory()
+      await api.deleteInventario(deletedItemId)
+      setInventory((currentInventory) => currentInventory.filter((item) => item.id !== deletedItemId))
+      setSuccess(`Artículo "${deletedItemName}" eliminado correctamente.`)
+      showToast(`Artículo "${deletedItemName}" eliminado correctamente.`, 'success')
     } catch (deleteError) {
       setError(deleteError.message || 'No se pudo eliminar el recurso.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -165,7 +179,7 @@ export function InventarioPage() {
         data.map((item) => ({
           ...item,
           onEdit: () => handleEdit(item),
-          onDelete: () => handleDelete(item.id),
+          onDeleteRequest: () => setItemToDelete(item),
         })),
       )
       setSuccess(search.trim() ? `Búsqueda realizada para: ${search.trim()}` : 'Se muestra el inventario completo.')
@@ -234,6 +248,31 @@ export function InventarioPage() {
         <ErrorMessage message={error} />
         {success ? <div className="success-banner">{success}</div> : null}
       </section>
+
+      {itemToDelete ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setItemToDelete(null)}>
+          <section
+            className="confirmation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-inventory-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-inventory-title">¿Confirmar eliminación?</h2>
+            <p>
+              ¿Estás seguro de que quieres eliminar el artículo <strong>{itemToDelete.nombre_articulo}</strong>?
+            </p>
+            <div className="btn-row">
+              <Button type="button" variant="secondary" onClick={() => setItemToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="danger" disabled={deletingId === itemToDelete.id} onClick={handleDelete}>
+                {deletingId === itemToDelete.id ? 'Eliminando...' : 'Sí, eliminar artículo'}
+              </Button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <div className="top-search" style={{ gridColumn: '1 / -1', marginBottom: 6 }}>
         <input

@@ -35,6 +35,9 @@ const eventColumns = [
         <Button variant="secondary" onClick={() => row.onEdit(row)}>
           Editar
         </Button>
+        <button className="action-delete" type="button" onClick={() => row.onDeleteRequest(row)}>
+          Eliminar
+        </button>
       </div>
     ),
   },
@@ -46,6 +49,8 @@ export function EventosPage() {
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [eventToDelete, setEventToDelete] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [query, setQuery] = useState('')
@@ -58,6 +63,7 @@ export function EventosPage() {
         data.map((event) => ({
           ...event,
           onEdit: () => handleEdit(event),
+          onDeleteRequest: () => setEventToDelete(event),
         })),
       )
     } catch (loadError) {
@@ -89,11 +95,34 @@ export function EventosPage() {
     setForm((current) => ({ ...current, [name]: value }))
   }
 
+  const handleDelete = async () => {
+    if (!eventToDelete || deletingId) return
+
+    const deletedEventId = eventToDelete.id
+    const deletedEventTitle = eventToDelete.titulo
+    setDeletingId(deletedEventId)
+    setError('')
+    setSuccess('')
+
+    try {
+      await api.deleteEvento(deletedEventId)
+      setEvents((currentEvents) => currentEvents.filter((item) => item.id !== deletedEventId))
+      setEventToDelete(null)
+      setSuccess(`Evento "${deletedEventTitle}" eliminado correctamente.`)
+      showToast(`Evento "${deletedEventTitle}" eliminado correctamente.`, 'success')
+    } catch (deleteError) {
+      setError(deleteError.message || 'No se pudo eliminar el evento.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const validateForm = () => {
     if (!form.titulo.trim()) return 'El título del evento es obligatorio.'
     if (!form.fecha) return 'La fecha es obligatoria.'
     if (!form.hora_inicio) return 'La hora de inicio es obligatoria.'
     if (!form.hora_fin) return 'La hora de término es obligatoria.'
+    if (form.hora_fin <= form.hora_inicio) return 'La hora de término debe ser posterior a la hora de inicio.'
     return ''
   }
 
@@ -177,6 +206,31 @@ export function EventosPage() {
         <ErrorMessage message={error} />
         {success ? <div className="success-banner">{success}</div> : null}
       </section>
+
+      {eventToDelete ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => !deletingId && setEventToDelete(null)}>
+          <section
+            className="confirmation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-event-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-event-title">¿Confirmar eliminación?</h2>
+            <p>
+              ¿Estás seguro de que quieres eliminar el evento <strong>{eventToDelete.titulo}</strong>?
+            </p>
+            <div className="btn-row">
+              <Button type="button" variant="secondary" disabled={Boolean(deletingId)} onClick={() => setEventToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="danger" disabled={Boolean(deletingId)} onClick={handleDelete}>
+                {deletingId ? 'Eliminando...' : 'Sí, eliminar evento'}
+              </Button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <section className="panel">
         <div className="panel-header">

@@ -15,6 +15,13 @@ const initialForm = {
   observaciones: '',
 }
 
+const attendanceStatusLabels = {
+  P: 'Presente',
+  X: 'Ausente',
+  A: 'Atrasado',
+  '/': 'Observaciones',
+}
+
 const attendanceColumns = [
   { key: 'id', label: 'ID' },
   {
@@ -23,7 +30,11 @@ const attendanceColumns = [
     render: (row) => row.estudiante?.nombre ?? 'Sin estudiante',
   },
   { key: 'fecha', label: 'Fecha' },
-  { key: 'estado_asistencia', label: 'Estado' },
+  {
+    key: 'estado_asistencia',
+    label: 'Estado',
+    render: (row) => attendanceStatusLabels[row.estado_asistencia] || 'Sin estado',
+  },
   {
     key: 'observaciones',
     label: 'Observaciones',
@@ -37,6 +48,9 @@ const attendanceColumns = [
         <Button variant="secondary" onClick={() => row.onEdit(row)}>
           Editar
         </Button>
+        <button className="action-delete" type="button" onClick={() => row.onDeleteRequest(row)}>
+          Eliminar
+        </button>
       </div>
     ),
   },
@@ -50,6 +64,8 @@ export function AsistenciasPage() {
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [attendanceToDelete, setAttendanceToDelete] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -62,6 +78,7 @@ export function AsistenciasPage() {
         attendanceData.map((item) => ({
           ...item,
           onEdit: () => handleEdit(item),
+          onDeleteRequest: () => setAttendanceToDelete(item),
         })),
       )
     } catch (loadError) {
@@ -90,6 +107,29 @@ export function AsistenciasPage() {
   const handleChange = (event) => {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleDelete = async () => {
+    if (!attendanceToDelete || deletingId) return
+
+    const deletedAttendanceId = attendanceToDelete.id
+    const studentName = attendanceToDelete.estudiante?.nombre || 'el estudiante'
+    const attendanceDate = attendanceToDelete.fecha
+    setDeletingId(deletedAttendanceId)
+    setError('')
+    setSuccess('')
+
+    try {
+      await api.deleteAsistencia(deletedAttendanceId)
+      setAttendance((currentAttendance) => currentAttendance.filter((item) => item.id !== deletedAttendanceId))
+      setAttendanceToDelete(null)
+      setSuccess(`Registro de asistencia de ${studentName} del ${attendanceDate} eliminado correctamente.`)
+      showToast(`Registro de asistencia de ${studentName} del ${attendanceDate} eliminado correctamente.`, 'success')
+    } catch (deleteError) {
+      setError(deleteError.message || 'No se pudo eliminar el registro de asistencia.')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const validateForm = () => {
@@ -172,8 +212,7 @@ export function AsistenciasPage() {
               <select name="estado_asistencia" value={form.estado_asistencia} onChange={handleChange}>
                 <option value="P">Presente</option>
                 <option value="X">Ausente</option>
-                <option value="/">Observación</option>
-                <option value="A">Atraso</option>
+                <option value="A">Atrasado</option>
               </select>
             </label>
             <FormField label="Observaciones" name="observaciones" value={form.observaciones} onChange={handleChange} placeholder="Opcional" />
@@ -194,6 +233,33 @@ export function AsistenciasPage() {
         <ErrorMessage message={error} />
         {success ? <div className="success-banner">{success}</div> : null}
       </section>
+
+      {attendanceToDelete ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => !deletingId && setAttendanceToDelete(null)}>
+          <section
+            className="confirmation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-attendance-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-attendance-title">¿Confirmar eliminación?</h2>
+            <p>
+              ¿Estás seguro de que quieres eliminar el registro de asistencia de{' '}
+              <strong>{attendanceToDelete.estudiante?.nombre || 'el estudiante'}</strong>{' '}
+              correspondiente al <strong>{attendanceToDelete.fecha}</strong>?
+            </p>
+            <div className="btn-row">
+              <Button type="button" variant="secondary" disabled={Boolean(deletingId)} onClick={() => setAttendanceToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="danger" disabled={Boolean(deletingId)} onClick={handleDelete}>
+                {deletingId ? 'Eliminando...' : 'Sí, eliminar registro'}
+              </Button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <section className="panel">
         <div className="panel-header">
